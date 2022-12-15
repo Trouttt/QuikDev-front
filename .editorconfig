@@ -1,0 +1,10 @@
+# o editor config vai setar configurações ao criar arquivos.
+root = true
+
+[*]
+indent_style = spaces #espaços na identação
+indent_size = 2 #2 espaços
+end_of_line =  lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
