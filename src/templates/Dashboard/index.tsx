@@ -3,130 +3,164 @@ import Card from 'components/Card'
 import Form from 'components/Form'
 import Header from 'components/Header'
 import Input from 'components/Input'
-import Table from 'components/Table'
-import Title from 'components/Title'
 import Cookies from 'js-cookie'
-import { ChangeEvent, ReactNode, useContext, useEffect, useState } from 'react'
+
+import downloadjs from 'downloadjs'
+
+import React, { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { toast } from 'react-toastify'
 import jwt from 'jwt-decode'
-import { api } from 'services/api'
-import { UserContext } from 'store/auth-context'
+import { api, aws_s3_api } from 'services/api'
+import 'react-toastify/dist/ReactToastify.css'
 import * as S from './styles'
+import TextArea from 'components/TextArea'
 
-type Data = {
-  value: number
-  createAt: string
-  origin: string
-  receiver: string
+type User = {
+  id: string
+  name: string
 }
-type MetaData = {
-  has_next_page: false
-  has_previous_page: false
-  page: number
-  take: number
+
+type Post = {
+  id: string
+  user: User
+  title: string
+  description: string
+  image_path: string
+  comment: Comment[]
 }
-type ListProps = {
-  data: Data[]
-  metaData: MetaData
-  balance?: number
+
+type Comment = {
+  id: string
+  description: string
+  user: User
+}
+type Image = {
+  name: string
+  size: number
+  type: string
 }
 
 export default function Dashboard() {
   const router = useRouter()
-  const ctx = useContext(UserContext)
-  const [transactions, setTransactions] = useState<ListProps>({
-    balance: 0,
-    metaData: {
-      page: 1,
-      take: 10,
-      has_next_page: false,
-      has_previous_page: false
-    },
-    data: []
-  })
-  const [openTable, setOpenTable] = useState<boolean>(true)
-  const [pagination, setPagination] = useState({
-    has_next_page: false,
-    has_previous_page: false,
-    page: 1,
-    take: 10
-  })
 
-  const [money, setMoney] = useState({
-    value: 0,
-    isValid: true
+  const [editComment, setEditComment] = useState({
+    idCommentToEdit: '',
+    isEditting: false
   })
-
-  const [user, setUser] = useState({
+  const [updateCommentValue, setUpdateCommentValue] = useState({
     value: '',
-    isValid: true
+    isValid: false
   })
 
-  const onInputMoneyHandler = (value: React.ChangeEvent<HTMLInputElement>) => {
-    setMoney({
-      value: parseInt(value.target.value),
-      isValid: parseInt(value.target.value) > 0
+  const [posts, setPosts] = useState<Post[]>([])
+  const [questionPreviewImage, setQuestionPreviewImage] = useState('')
+
+  const [questionImage, setQuestionImage] = useState<Image>({
+    name: '',
+    size: 0,
+    type: ''
+  })
+
+  const [questionTitle, setQuestionTitle] = useState({
+    value: '',
+    isValid: false
+  })
+
+  const [questionDescription, setQuestionDescription] = useState({
+    value: '',
+    isValid: false
+  })
+
+  const [commentDescription, setCommentDescription] = useState({
+    value: '',
+    isValid: false
+  })
+
+  const clearPreviewFileImageWhenClicked = () => {
+    setQuestionPreviewImage('')
+  }
+
+  const onQuestionTitleHandler = (
+    value: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setQuestionTitle({
+      value: value.target.value,
+      isValid: value.target.value.length > 1
     })
   }
 
-  const onMoneyBlur = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setMoney({
-      value: money.value,
-      isValid: money.value > 0
+  const onQuestionImageHandler = async (event: any) => {
+    const image = event.target.files[0]
+
+    if (event.target.files[0]) {
+      setQuestionPreviewImage(
+        URL.createObjectURL(new Blob([image], { type: 'application/zip' }))
+      )
+
+      setQuestionImage(image)
+    }
+  }
+  const onQuestionTitleBlur = () => {
+    setQuestionTitle({
+      value: questionTitle.value,
+      isValid: questionTitle.value.length > 1
     })
   }
 
-  const onInputUserHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUser({
+  const onQuestionDescriptionHandler = (
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    setQuestionDescription({
       value: event.target.value,
       isValid: event.target.value.length >= 3
     })
   }
 
-  const onUserBlur = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUser({
-      value: user.value,
-      isValid: user.value.length >= 3
+  const onQuestionDescriptionBlur = () => {
+    setQuestionDescription({
+      value: questionDescription.value,
+      isValid: questionDescription.value.length >= 3
     })
   }
-  const makePagination = async (props: string) => {
-    if (props === 'previous') {
-      await getTransactionHandler({ page: pagination.page - 1, order: 'ASC' })
-    } else {
-      await getTransactionHandler({ page: pagination.page + 1, order: 'ASC' })
-    }
+  const onCommentDescriptionHandler = (
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    setCommentDescription({
+      value: event.target.value,
+      isValid: event.target.value.length >= 3
+    })
   }
-  const getTransactionHandler = async (props: {
-    page: number
-    order: string
-  }) => {
+
+  const onCommentDescriptionBlur = () => {
+    setCommentDescription({
+      value: commentDescription.value,
+      isValid: commentDescription.value.length >= 3
+    })
+  }
+
+  const onUpdateValueHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setUpdateCommentValue({
+      value: event.target.value,
+      isValid: event.target.value.length >= 3
+    })
+  }
+  const onUpdateValueBlur = () => {
+    setUpdateCommentValue({
+      value: updateCommentValue.value,
+      isValid: updateCommentValue.value.length >= 3
+    })
+  }
+  const getPostsHandler = async () => {
     try {
-      const foundTransactions: any = await api.get(
-        `transactions?order=${props.order}&page=${props.page}&take=10`,
-        {
-          headers: {
-            Authorization: `Bearer ${Cookies.get('auth_token')}`
-          }
-        }
-      )
-      setPagination(() => {
-        return {
-          has_next_page: foundTransactions.data.meta_data.has_next_page,
-
-          has_previous_page: foundTransactions.data.meta_data.previous_page,
-
-          page: foundTransactions.data.meta_data.page,
-
-          take: foundTransactions.data.meta_data.take
+      const foundPosts: any = await api.get('posts', {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('auth_token')}`
         }
       })
-
-      if (foundTransactions) {
-        setTransactions(foundTransactions.data)
+      if (foundPosts) {
+        setPosts(foundPosts.data)
       }
-
-      ctx.balance = foundTransactions.data.balance
     } catch (e: any) {
       if (e.message === 'Network Error') {
         toast.error('Servidor offline')
@@ -138,131 +172,363 @@ export default function Dashboard() {
       }
     }
   }
-
-  const changeFunctionDashboard = (value: boolean) => {
-    setOpenTable(value)
-  }
-
-  const submitHandler = async (event: React.FormEvent) => {
+  const deletePostHandler = async (
+    event: React.FormEvent,
+    post_id: string,
+    post_user_id: string
+  ) => {
     event.preventDefault()
-
+    const token = getToken()
     try {
-      const payload = Cookies.get('auth_token')
-      let token = { username: '', exp: '', iat: '' }
-      if (payload) token = jwt(payload)
-      const body = {
-        debitedAccountName: token.username,
-        creditedAccountName: user.value,
-        value: money.value
-      }
-      const response = await api.post(`transactions`, body, {
+      if (token.id !== post_user_id)
+        return toast.error('Apenas o dono da postagem pode excluir ela')
+
+      const response = await api.delete(`posts/${post_id}`, {
         headers: {
           Authorization: `Bearer ${Cookies.get('auth_token')}`
         }
       })
 
-      ctx.balance = response.data.debitedAccount.balance
-      if (response) {
-        await getTransactionHandler({ order: 'ASC', page: 1 })
-        setOpenTable(true)
-      }
+      if (response) toast.success(response.data.message)
+      location.reload()
     } catch (e: any) {
-      if (e.response.data.statusCode === 400)
-        toast.error(`Aconteceu um erro: ${e.response.data.message}`, {
-          position: 'top-center',
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: 'light'
-        })
+      if (e.response.status === 400) return toast.error(e.response.data.message)
+      return toast.error('Aconteceu um error')
     }
   }
+  const cancelUpdateCommentHandler = async () => {
+    setUpdateCommentValue({ isValid: false, value: '' })
+    setEditComment((prevState) => ({
+      idCommentToEdit: '',
+      isEditting: !prevState.isEditting
+    }))
+  }
+  const confirmUpdateCommentHandler = async (
+    event: React.FormEvent,
+    comment_id: string
+  ) => {
+    event.preventDefault()
+
+    try {
+      if (!updateCommentValue.isValid)
+        return toast.error('É necessário no mínimo 3 caracteres')
+
+      const body = {
+        description: updateCommentValue.value
+      }
+
+      const response = await api.patch(`comments/${comment_id}`, body, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('auth_token')}`
+        }
+      })
+      setEditComment((prevState) => ({
+        idCommentToEdit: '',
+        isEditting: !prevState.isEditting
+      }))
+      if (response.status === 201) toast.success(response.data.message)
+      location.reload()
+    } catch (e: any) {
+      if (e.response.status === 400) return toast.error(e.response.message)
+      return toast.error('Aconteceu um error')
+    }
+  }
+  const updateCommentHandler = async (
+    event: React.FormEvent,
+    comment_user_id: string,
+    comment_id: string
+  ) => {
+    event.preventDefault()
+    const token = getToken()
+
+    try {
+      if (token.id !== comment_user_id)
+        return toast.error('Apenas o dono do comentário pode editar ele')
+
+      setEditComment((prevState) => ({
+        idCommentToEdit: comment_id,
+        isEditting: !prevState.isEditting
+      }))
+    } catch (e: any) {
+      if (e.response.status === 400) return toast.error(e.response.message)
+      return toast.error('Aconteceu um error')
+    }
+  }
+  const deleteCommentHandler = async (
+    event: React.FormEvent,
+    comment_id: string,
+    comment_user_id: string,
+    post_user_id: string
+  ) => {
+    event.preventDefault()
+    const token = getToken()
+
+    try {
+      if (token.id !== comment_user_id && token.id !== post_user_id)
+        return toast.error(
+          'Apenas o dono do comentário ou o dono da postagem podem deletar o comentário '
+        )
+      const response = await api.delete(`comments/${comment_id}`, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('auth_token')}`
+        }
+      })
+      if (response.status === 201) toast.success(response.data.message)
+      location.reload()
+    } catch (e: any) {
+      if (e.response.status === 400) toast.error(e.response.data.message)
+      else toast.error('Aconteceu um error')
+    }
+  }
+  const generateReport = async (event: React.FormEvent) => {
+    event.preventDefault()
+
+    try {
+      const response = await api.get(`reports`, {
+        responseType: 'arraybuffer',
+        headers: {
+          Authorization: `Bearer ${Cookies.get('auth_token')}`
+        }
+      })
+
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+
+      downloadjs(blob, 'eita.pdf', 'application/pdf')
+    } catch (e) {
+      toast.error('Error ao gerar relatório')
+    }
+  }
+  const submitHandler = async (event: React.FormEvent) => {
+    event.preventDefault()
+    let getMedia
+    try {
+      if (questionImage) {
+        const createMediaDto = {
+          folder_name: 'Foods'
+        }
+        getMedia = await api.post(`aws-s3`, createMediaDto, {
+          headers: {
+            Authorization: `Bearer ${Cookies.get('auth_token')}`
+          }
+        })
+
+        const responseAws = await aws_s3_api(
+          getMedia.data.uploadUrl,
+          questionImage
+        )
+        if (responseAws.status !== 200) {
+          toast.error(`Aconteceu um erro`, {})
+        }
+      }
+      const body = {
+        title: questionTitle.value,
+        description: questionDescription.value,
+        image_path: getMedia && questionPreviewImage ? getMedia.data.key : null
+      }
+      const response = await api.post(`posts`, body, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('auth_token')}`
+        }
+      })
+
+      setPosts((prevState) => [
+        ...prevState,
+        {
+          id: response.data.id,
+          user: response.data.user,
+          title: response.data.title,
+          description: response.data.description,
+          image_path: response.data.image_path,
+          comment: response.data.comments
+        }
+      ])
+
+      toast.success(`Postagem criada com sucesso!!`, {})
+      location.reload()
+    } catch (e: any) {
+      if (e.response.data.statusCode === 400)
+        toast.error(`Aconteceu um erro: ${e.response.data.message}`, {})
+    }
+  }
+  const submitCommentHandler = async (
+    event: React.FormEvent,
+    post_id: string
+  ) => {
+    event.preventDefault()
+    try {
+      const body = {
+        post_id: post_id,
+        description: commentDescription.value
+      }
+      const response = await api.post(`comments`, body, {
+        headers: {
+          Authorization: `Bearer ${Cookies.get('auth_token')}`
+        }
+      })
+      if (response) toast.success('Comentário cadastrado com sucesso')
+      location.reload()
+    } catch (e: any) {
+      if (e.response.status === 400) toast.error(e.response.message)
+      toast.error('Aconteceu um error')
+    }
+  }
+  const getToken = () => {
+    const payload = Cookies.get('auth_token')
+    let token = { id: '', name: '', exp: '', iat: '' }
+    if (payload) token = jwt(payload)
+    return token
+  }
   useEffect(() => {
-    getTransactionHandler({ order: 'ASC', page: pagination.page })
+    getPostsHandler()
   }, [])
 
   return (
     <S.Base>
-      <Header></Header>
+      <Header generateReport={generateReport}></Header>
       <S.Main>
         <Card>
-          <S.ButtonBox>
-            <Button
-              onClick={() => {
-                changeFunctionDashboard(true)
-              }}
-              styleButton={'buttonRectangular'}
-            >
-              TRANSAÇÕES
-            </Button>
-            <Button
-              onClick={() => {
-                changeFunctionDashboard(false)
-              }}
-              styleButton={'buttonRectangular'}
-              color="yellow"
-            >
-              FAZER TRANSAÇÃO
-            </Button>
-          </S.ButtonBox>
-
-          {openTable && (
-            <>
-              <Table transactions={transactions.data}></Table>
-              <S.BoxPagination>
-                <S.ButtonPagination
-                  onClick={() => {
-                    makePagination('previous')
-                  }}
-                  disabled={
-                    pagination.has_previous_page === true ? true : false
-                  }
-                >
-                  Prev
-                </S.ButtonPagination>
-                <S.TitlePagination>{pagination.page}</S.TitlePagination>
-                <S.ButtonPagination
-                  onClick={() => {
-                    makePagination('next')
-                  }}
-                  disabled={!pagination.has_next_page === true ? true : false}
-                >
-                  Next
-                </S.ButtonPagination>
-              </S.BoxPagination>
-            </>
-          )}
-          {!openTable && (
-            <S.FormBox>
-              <Form onSubmit={submitHandler}>
-                <Title size="large">FAZER TRANSFERÊNCIA</Title>
-                <Input
-                  inputChangeHandler={onInputUserHandler}
-                  onBlur={onUserBlur}
-                  isValid={user.isValid}
-                  placeholder="Nome do usuário"
-                  type="text"
-                ></Input>
-                <Input
-                  type="money"
-                  placeholder="Valor a ser transferido"
-                  inputChangeHandler={onInputMoneyHandler}
-                  onBlur={onMoneyBlur}
-                  isValid={money.isValid}
-                />
-
-                <Button
-                  disabled={!money.isValid || !user.isValid ? true : false}
-                >
-                  COMPLETAR
-                </Button>
-              </Form>
-            </S.FormBox>
-          )}
+          <Form onSubmit={submitHandler}>
+            <Input
+              placeholder="Título da pergunta"
+              inputChangeHandler={onQuestionTitleHandler}
+              onBlur={onQuestionTitleBlur}
+              type="text"
+              isValid={questionTitle.isValid}
+            />
+            <TextArea
+              placeholder="Descrição da pergunta"
+              textAreaChangeHandler={onQuestionDescriptionHandler}
+              onBlur={onQuestionDescriptionBlur}
+            ></TextArea>
+            <Input
+              placeholder="Faça o upload de uma imagem"
+              isValid={true}
+              onClick={clearPreviewFileImageWhenClicked}
+              inputChangeHandler={onQuestionImageHandler}
+              type="file"
+            ></Input>
+            {questionPreviewImage && (
+              <S.Image src={questionPreviewImage}></S.Image>
+            )}
+            <Button>POSTAR</Button>
+          </Form>
         </Card>
+        {Array.isArray(posts)
+          ? posts.map((post: Post, index: number) => (
+              <Card key={index}>
+                <S.Comment>
+                  <S.UserName>{post.user.name}</S.UserName>
+                  <S.Title>{post.title}</S.Title>
+                  <S.Description>{post.description}</S.Description>
+                </S.Comment>
+
+                {post.image_path && (
+                  <S.Image
+                    src={
+                      process.env.NEXT_PUBLIC_AWS_S3_BUCKET_URL +
+                      post.image_path
+                    }
+                  ></S.Image>
+                )}
+                {Array.isArray(post.comment)
+                  ? post.comment.map((comment: Comment, index) => (
+                      <Card styleCard="medium" key={index}>
+                        <S.Comment>
+                          <S.UserName>{comment.user.name}</S.UserName>
+                          {editComment.isEditting &&
+                            editComment.idCommentToEdit === comment.id && (
+                              <Input
+                                type="text"
+                                onBlur={onUpdateValueBlur}
+                                inputChangeHandler={onUpdateValueHandler}
+                                isValid={updateCommentValue.isValid}
+                                placeholder="Atualizar comentário"
+                              ></Input>
+                            )}
+                          {!editComment.isEditting && (
+                            <S.Description>{comment.description}</S.Description>
+                          )}
+                          <S.CommentButtonHeaderBox>
+                            {!editComment.isEditting && (
+                              <Button
+                                type="button"
+                                onClick={(e) =>
+                                  deleteCommentHandler(
+                                    e,
+                                    comment.id,
+                                    comment.user.id,
+                                    post.user.id
+                                  )
+                                }
+                              >
+                                Deletar
+                              </Button>
+                            )}
+                            {editComment.isEditting &&
+                              editComment.idCommentToEdit === comment.id && (
+                                <Button
+                                  type="button"
+                                  onClick={cancelUpdateCommentHandler}
+                                >
+                                  Cancelar
+                                </Button>
+                              )}
+                            {!editComment.isEditting && (
+                              <Button
+                                onClick={(e) =>
+                                  updateCommentHandler(
+                                    e,
+                                    comment.user.id,
+                                    comment.id
+                                  )
+                                }
+                              >
+                                Editar
+                              </Button>
+                            )}
+                            {editComment.isEditting &&
+                              editComment.idCommentToEdit === comment.id && (
+                                <Button
+                                  onClick={(e) =>
+                                    confirmUpdateCommentHandler(e, comment.id)
+                                  }
+                                >
+                                  Confirmar
+                                </Button>
+                              )}
+                          </S.CommentButtonHeaderBox>
+                        </S.Comment>
+                      </Card>
+                    ))
+                  : null}
+
+                <S.CommentArea>
+                  <Form
+                    onSubmit={(e) => {
+                      submitCommentHandler(e, post.id)
+                    }}
+                  >
+                    <TextArea
+                      placeholder={'Adicionar novo comentário'}
+                      textAreaChangeHandler={onCommentDescriptionHandler}
+                      onBlur={onCommentDescriptionBlur}
+                    ></TextArea>
+                    <S.ButtonBox>
+                      <Button>Enviar comentário</Button>
+                      <Button
+                        onClick={(e) =>
+                          deletePostHandler(e, post.id, post.user.id)
+                        }
+                        type="button"
+                      >
+                        Deletar postagem
+                      </Button>
+                    </S.ButtonBox>
+                  </Form>
+                </S.CommentArea>
+              </Card>
+            ))
+          : null}
       </S.Main>
     </S.Base>
   )

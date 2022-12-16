@@ -17,22 +17,22 @@ export default function SignUp() {
   const formInitialState = {
     username_value: '',
     password_value: '',
+    email_value: '',
     username_isValid: false,
     password_isValid: false,
+    email_isValid: false,
     form_isValid: false
   }
   const [formState, dispatchForm] = useReducer(formReducer, formInitialState)
 
   const authCtx = useContext(UserContext)
 
-  const usernameChangeHandler = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    dispatchForm({ type: 'USERNAME_INPUT', val: event.target.value })
+  const emailChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
+    dispatchForm({ type: 'EMAIL_INPUT', val: event.target.value })
   }
 
-  const usernameValidateHandler = () => {
-    dispatchForm({ type: 'USERNAME_BLUR', val: formState.username_value })
+  const emailValidateHandler = () => {
+    dispatchForm({ type: 'EMAIL_BLUR', val: formState.email_value })
   }
 
   const passwordChangeHandler = (
@@ -49,7 +49,7 @@ export default function SignUp() {
     event.preventDefault()
 
     const body = {
-      username: formState.username_value,
+      email: formState.email_value,
       password: formState.password_value
     }
 
@@ -63,10 +63,10 @@ export default function SignUp() {
           Sign In
         </Title>
         <Input
-          inputChangeHandler={usernameChangeHandler}
-          onBlur={usernameValidateHandler}
-          isValid={formState.username_isValid}
-          placeholder="Usuário"
+          inputChangeHandler={emailChangeHandler}
+          onBlur={emailValidateHandler}
+          isValid={formState.email_isValid}
+          placeholder="email"
           type="text"
         />
         <Input
@@ -77,7 +77,7 @@ export default function SignUp() {
           type="password"
         />
         <Button
-          disabled={!formState.password_isValid || !formState.username_isValid}
+          disabled={!formState.password_isValid || !formState.email_isValid}
         >
           Entrar
         </Button>

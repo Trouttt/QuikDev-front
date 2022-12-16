@@ -1,13 +1,14 @@
 import {
   validateConfirmPassword,
+  validateEmail,
   validatePassword
 } from 'utils/validateForm-utils'
 
 type formState = {
-  username_value: string
+  email_value: string
   password_value: string
 
-  username_isValid: boolean
+  email_isValid: boolean
   password_isValid: boolean
 
   form_isValid: boolean
@@ -20,35 +21,35 @@ type formAction = {
 
 const signInFormReducer = (state: formState, action: formAction): formState => {
   switch (action.type) {
-    case 'USERNAME_INPUT':
+    case 'EMAIL_INPUT':
       return {
-        username_value: action.val,
-        username_isValid: action.val.length > 3,
+        email_value: action.val,
+        email_isValid: validateEmail(action.val),
         password_value: state.password_value,
         password_isValid: state.password_isValid,
         form_isValid: state.form_isValid
       }
-    case 'USERNAME_BLUR':
+
+    case 'EMAIL_BLUR':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_value.length >= 3,
+        email_value: state.email_value,
+        email_isValid: validateEmail(state.email_value),
         password_value: state.password_value,
         password_isValid: state.password_isValid,
-
         form_isValid: state.form_isValid
       }
     case 'PASSWORD_INPUT':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_isValid,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: action.val,
         password_isValid: validatePassword(action.val),
         form_isValid: state.form_isValid
       }
     case 'PASSWORD_BLUR':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_isValid,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: state.password_value,
         password_isValid: validatePassword(state.password_value),
 
@@ -56,10 +57,10 @@ const signInFormReducer = (state: formState, action: formAction): formState => {
       }
     default:
       return {
-        username_value: '',
+        email_value: '',
         password_value: '',
 
-        username_isValid: false,
+        email_isValid: false,
         password_isValid: false,
 
         form_isValid: false

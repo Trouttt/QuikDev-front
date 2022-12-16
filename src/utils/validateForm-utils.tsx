@@ -10,7 +10,12 @@ const validatePassword = (password: string) => {
   }
   return true
 }
-
+const validateEmail = (email: string) => {
+  if (!/^\w+([\\.-]?\w+)*@\w+([\\.-]?\w+)*(\.\w{2,3})+$/.test(email)) {
+    return false
+  }
+  return true
+}
 const validateConfirmPassword = (
   password: string,
   confirmPassword?: string
@@ -19,4 +24,4 @@ const validateConfirmPassword = (
   return true
 }
 
-export { validatePassword, validateConfirmPassword }
+export { validatePassword, validateEmail, validateConfirmPassword }

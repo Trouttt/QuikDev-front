@@ -9,18 +9,17 @@ export const Header = styled.header`
     align-items: center;
     justify-content: space-around;
     box-shadow: 0px 10px 26px 8px rgba(0, 0, 0, 0.1);
+
+    @media (max-width: 800px) {
+      flex-direction: column;
+      gap: 2rem;
+      padding: 5rem 0 3rem 0;
+      height: auto;
+    }
   `}
 `
-export const BalanceBox = styled.div`
+
+export const ButtonBox = styled.div`
   display: flex;
-  align-items: center;
-  justify-content: space-around;
-  width: 20rem;
-`
-export const Balance = styled.div`
-  ${({ theme }) => css`
-    background-color: ${theme.colors.dark_gray};
-    padding: 1rem 2rem;
-    border-radius: 2rem;
-  `}
+  gap: 1rem;
 `

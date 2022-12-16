@@ -23,7 +23,9 @@ export const Main = styled.main`
   ${({ theme }) => css`
     margin-top: 5rem;
     display: flex;
+    flex-direction: column;
     justify-content: center;
+    align-items: center;
   `}
 `
 export const BoxPagination = styled.div`
@@ -61,40 +63,63 @@ export const FormBox = styled.div`
 `
 
 export const ButtonBox = styled.div`
-  display: flex;
-  width: 100%;
-  border-bottom: 0.3rem solid gray;
-  padding-bottom: 2rem;
-`
-export const Table = styled.table`
   ${({ theme }) => css`
-    border: 1px solid black;
-    border-collapse: collapse;
+    display: flex;
+    justify-content:center;
     width: 100%;
+    gap:1rem;
+    background-color: ${theme.colors.medium_gray}
+    padding-bottom: 2rem;
+
+    @media (max-width: 800px){
+      flex-direction:column;
+    }
   `}
 `
-export const Tr = styled.tr`
-  ${({ theme }) => css`
-    border: 1px solid black;
-    border-collapse: collapse;
-  `}
+
+export const Image = styled.img`
+  width: 100%;
+  height: 30rem;
 `
-export const Th = styled.th`
-  ${({ theme }) => css`
-    border: 1px solid black;
-    color: black;
-    font-size: ${theme.font.sizes.small};
-    border-collapse: collapse;
-    padding: 0.5rem 0rem;
-    width: 25%;
-  `}
+
+export const Comment = styled.div`
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
 `
-export const Td = styled.td`
-  ${({ theme }) => css`
-    border: 1px solid black;
-    border-collapse: collapse;
-    padding: 0.5rem;
-    width: 25%;
-    font-size: ${theme.font.sizes.small};
-  `}
+export const CommentHeaderBox = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+`
+export const CommentButtonHeaderBox = styled.div`
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    flex-direction: column;
+  }
+`
+
+export const CommentArea = styled.div`
+  display: flex;
+  justify-content: center;
+  margin: 2rem 0rem;
+  width: 100%;
+`
+
+export const UserName = styled.h2`
+  font-size: 3rem;
+`
+export const Title = styled.h3`
+  margin: 1rem 0rem;
+  word-break: break-all;
+  font-size: 2rem;
+`
+export const Description = styled.p`
+  word-break: break-all;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
 `

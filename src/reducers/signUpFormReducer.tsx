@@ -1,13 +1,16 @@
 import {
   validateConfirmPassword,
+  validateEmail,
   validatePassword
 } from 'utils/validateForm-utils'
 
 type formState = {
-  username_value: string
+  name_value: string
+  email_value: string
   password_value: string
   confirmPassword_value: string
-  username_isValid: boolean
+  name_isValid: boolean
+  email_isValid: boolean
   password_isValid: boolean
   confirmPassword_isValid: boolean
   form_isValid: boolean
@@ -20,20 +23,49 @@ type formAction = {
 
 const signUpFormReducer = (state: formState, action: formAction): formState => {
   switch (action.type) {
-    case 'USERNAME_INPUT':
+    case 'NAME_INPUT':
       return {
-        username_value: action.val,
-        username_isValid: action.val.length > 3,
+        name_value: action.val,
+        name_isValid: action.val.length > 3,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: state.password_value,
         password_isValid: state.password_isValid,
         confirmPassword_value: state.confirmPassword_value,
         confirmPassword_isValid: state.confirmPassword_isValid,
         form_isValid: state.form_isValid
       }
-    case 'USERNAME_BLUR':
+    case 'NAME_BLUR':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_value.length >= 3,
+        name_value: state.name_value,
+        name_isValid: state.name_value.length >= 3,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
+        password_value: state.password_value,
+        password_isValid: state.password_isValid,
+        confirmPassword_value: state.confirmPassword_value,
+        confirmPassword_isValid: state.confirmPassword_isValid,
+        form_isValid: state.form_isValid
+      }
+
+    case 'EMAIL_INPUT':
+      return {
+        name_value: state.name_value,
+        name_isValid: state.name_isValid,
+        email_value: action.val,
+        email_isValid: validateEmail(action.val),
+        password_value: state.password_value,
+        password_isValid: state.password_isValid,
+        confirmPassword_value: state.confirmPassword_value,
+        confirmPassword_isValid: state.confirmPassword_isValid,
+        form_isValid: state.form_isValid
+      }
+    case 'EMAIL_BLUR':
+      return {
+        name_value: state.name_value,
+        name_isValid: state.name_isValid,
+        email_value: state.email_value,
+        email_isValid: validateEmail(state.email_value),
         password_value: state.password_value,
         password_isValid: state.password_isValid,
         confirmPassword_value: state.confirmPassword_value,
@@ -42,8 +74,10 @@ const signUpFormReducer = (state: formState, action: formAction): formState => {
       }
     case 'PASSWORD_INPUT':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_isValid,
+        name_value: state.name_value,
+        name_isValid: state.name_isValid,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: action.val,
         password_isValid: validatePassword(action.val),
         confirmPassword_value: state.confirmPassword_value,
@@ -55,8 +89,10 @@ const signUpFormReducer = (state: formState, action: formAction): formState => {
       }
     case 'PASSWORD_BLUR':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_isValid,
+        name_value: state.name_value,
+        name_isValid: state.name_isValid,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: state.password_value,
         password_isValid: validatePassword(state.password_value),
         confirmPassword_value: state.confirmPassword_value,
@@ -68,8 +104,10 @@ const signUpFormReducer = (state: formState, action: formAction): formState => {
       }
     case 'CONFIRM_PASSWORD_INPUT':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_isValid,
+        name_value: state.name_value,
+        name_isValid: state.name_isValid,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: state.password_value,
         password_isValid: validatePassword(state.password_value),
         confirmPassword_value: action.val,
@@ -81,8 +119,10 @@ const signUpFormReducer = (state: formState, action: formAction): formState => {
       }
     case 'CONFIRM_PASSWORD_BLUR':
       return {
-        username_value: state.username_value,
-        username_isValid: state.username_isValid,
+        name_value: state.name_value,
+        name_isValid: state.name_isValid,
+        email_value: state.email_value,
+        email_isValid: state.email_isValid,
         password_value: state.password_value,
         password_isValid: validatePassword(state.password_value),
         confirmPassword_value: state.confirmPassword_value,
@@ -94,10 +134,12 @@ const signUpFormReducer = (state: formState, action: formAction): formState => {
       }
     default:
       return {
-        username_value: '',
+        name_value: '',
+        email_value: '',
         password_value: '',
         confirmPassword_value: '',
-        username_isValid: false,
+        name_isValid: false,
+        email_isValid: false,
         password_isValid: false,
         confirmPassword_isValid: false,
         form_isValid: false

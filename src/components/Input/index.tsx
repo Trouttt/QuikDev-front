@@ -5,10 +5,12 @@ import { useEffect, useState } from 'react'
 type ListProps = {
   placeholder: string
   inputChangeHandler: (value: React.ChangeEvent<HTMLInputElement>) => void
-  onBlur: (value: React.ChangeEvent<HTMLInputElement>) => void
+  onBlur?: (value: React.ChangeEvent<HTMLInputElement>) => void
+  onClick?: () => void
   type: string
   isValid: boolean
   prefix?: string
+  ref?: any
   defaultValue?: number
   decimalsLimit?: number
   name?: string
@@ -20,8 +22,10 @@ export default function Input({
   inputChangeHandler,
   isValid,
   prefix,
+  onClick,
   type,
   defaultValue,
+  ref,
   decimalsLimit,
   onBlur,
   ...props
@@ -64,11 +68,12 @@ export default function Input({
       ) : (
         <>
           <S.Input
-            onBlur={onBlur}
-            isValid={isValid}
             placeholder={placeholder}
             onChange={inputChangeHandler}
-            type="money"
+            isValid={isValid}
+            onClick={onClick}
+            ref={ref}
+            type="file"
           ></S.Input>
         </>
       )}

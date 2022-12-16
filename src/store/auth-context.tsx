@@ -10,7 +10,7 @@ import React from 'react'
 const defaultValuesUserContext = {
   balance: 0,
   isLoggedIn: false,
-  loginHandler: (body: { username: string; password: string }) => {
+  loginHandler: (body: { email: string; password: string }) => {
     console.log('')
   },
   logoutHandler: () => {
@@ -38,9 +38,9 @@ export const UserContextProvider = (props: any) => {
     router.push('/sign-in')
   }
 
-  const loginHandler = async (body: { username: string; password: string }) => {
+  const loginHandler = async (body: { email: string; password: string }) => {
     try {
-      const response = await api.post(`auth`, body)
+      const response = await api.post(`users/auth`, body)
 
       toast.success('Login realizado com sucesso', {
         position: 'top-center',
